@@ -1,0 +1,20 @@
+{
+  "18984": {
+    "sprite": "Klee",
+    "pid": 18984,
+    "is_playlist": false,
+    "scene": null,
+    "is_lasso": false,
+    "lasso_playlist": null,
+    "lasso_song": null
+  },
+  "18060": {
+    "sprite": "Klee",
+    "pid": 18060,
+    "is_playlist": false,
+    "scene": null,
+    "is_lasso": false,
+    "lasso_playlist": null,
+    "lasso_song": null
+  }
+}

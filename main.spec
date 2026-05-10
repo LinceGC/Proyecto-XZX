@@ -1,0 +1,76 @@
+# -*- mode: python ; coding: utf-8 -*-
+
+a = Analysis(
+    ['main.pyw'],
+    pathex=['.', 'src'],
+    binaries=[],
+    datas=[],
+    hiddenimports=[
+        'sprite_loader',
+        'pygame',
+        'pygame.mixer',
+        'pygame.display',
+        'pygame.event',
+        'pygame.image',
+        'pygame.transform',
+        'pygame.time',
+        'win32gui',
+        'win32con',
+        'win32api',
+        'win32process',
+        'pywintypes',
+        'psutil',
+        'keyboard',
+        'tkinter',
+        'tkinter.messagebox',
+        'PIL',
+        'PIL.Image',
+        'PIL.ImageTk',
+        'ast',
+        'threading',
+        'json',
+        'configparser',
+        'random',
+        'subprocess',
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[
+        'PySide6',
+        'cv2',
+    ],
+    noarchive=False,
+    optimize=0,
+)
+
+pyz = PYZ(a.pure)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name='main',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon='assets/icons/icon.ico',
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='main',
+)
