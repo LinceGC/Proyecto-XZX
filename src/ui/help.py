@@ -78,7 +78,10 @@ class HelpWindow:
         """
         self.parent_widget = parent
         self._window       = None   # QDialog, se crea al llamar show()
-
+        self._language     = "en"   # idioma por defecto del contenido explicativo
+        self._current_section = None
+        self._lang_btns    = {}
+        
     # =========================================================
     # API PUBLICA
     # =========================================================
@@ -344,6 +347,21 @@ class HelpWindow:
             theme.PADDING_NORMAL,
             4
         )
+        layout.setSpacing(theme.SP1)
+
+        # Selector de idioma: queda anclado en la esquina inferior izquierda.
+        # No usa imagenes externas para mantener compatibilidad con PyInstaller.
+        self._lang_btns = {}
+        for lang, label in (("es", "🇪🇸 ES"), ("en", "🇬🇧 EN")):
+            btn_lang = QPushButton(label)
+            btn_lang.setFont(theme.FONT_SMALL)
+            btn_lang.setFixedSize(70, 34)
+            btn_lang.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_lang.clicked.connect(lambda checked=False, code=lang: self._set_language(code))
+            layout.addWidget(btn_lang)
+            self._lang_btns[lang] = btn_lang
+
+        self._refresh_language_buttons()
         layout.addStretch()
 
         btn_close = QPushButton("Close")
@@ -412,6 +430,7 @@ class HelpWindow:
         content_layout.setSpacing(0)
 
         # Llamar al metodo que rellena el contenido de esta seccion
+        self._current_section = name
         builder_fn = self._sections[name]
         builder_fn(content_layout)
 
@@ -422,6 +441,46 @@ class HelpWindow:
         self._content_area.setWidget(content_widget)
         # Volver al inicio del scroll
         self._content_area.verticalScrollBar().setValue(0)
+        
+    def _set_language(self, language: str):
+        """Cambia el idioma de las explicaciones sin traducir los conceptos."""
+        if language not in ("en", "es") or language == self._language:
+            return
+
+        self._language = language
+        self._refresh_language_buttons()
+
+        # Reconstruir solo la seccion visible. Si algo aun no esta listo,
+        # salir sin romper la apertura de la ventana de ayuda.
+        if self._current_section and hasattr(self, "_content_area"):
+            self._show_section(self._current_section)
+
+    def _refresh_language_buttons(self):
+        """Actualiza el estado visual de los botones EN/ES."""
+        for lang, btn in getattr(self, "_lang_btns", {}).items():
+            if lang == self._language:
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {theme.ACCENT_DIM};
+                        color: {theme.ACCENT};
+                        border: 1px solid {theme.ACCENT};
+                        border-radius: {theme.RADIUS}px;
+                        font-weight: bold;
+                    }}
+                """)
+            else:
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: transparent;
+                        color: {theme.TEXT_MUTED};
+                        border: 1px solid {theme.BORDER_MID};
+                        border-radius: {theme.RADIUS}px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {theme.BG_HOVER};
+                        color: {theme.TEXT_BRIGHT};
+                    }}
+                """)        
 
     # =========================================================
     # HELPERS DE CONTENIDO
@@ -582,6 +641,21 @@ class HelpWindow:
     # =========================================================
 
     def _content_shortcuts(self, layout: QVBoxLayout):
+        if self._language == "es":
+            self._section_title(layout, "Atajos globales de teclado")
+            self._shortcut_row(layout, "Ctrl + Alt + S", "Mostrar / ocultar todos los sprites en ejecucion")
+            self._line(layout, "")
+            self._line(layout,
+                "Estos atajos funcionan en cualquier momento, incluso cuando "
+                "la ventana Settings esta minimizada o en la bandeja del sistema."
+            )
+
+            self._section_title(layout, "Controles del mouse para sprites")
+            self._shortcut_row(layout, "Left click",        "Pausar / reanudar el movimiento")
+            self._shortcut_row(layout, "Left click + drag", "Mover el sprite libremente")
+            self._shortcut_row(layout, "Tray icon > Close", "Cerrar el sprite")
+            return
+
         self._section_title(layout, "Global Keyboard Shortcuts")
         self._shortcut_row(layout, "Ctrl + Alt + S", "Show / Hide all running sprites")
         self._line(layout, "")
@@ -596,6 +670,36 @@ class HelpWindow:
         self._shortcut_row(layout, "Tray icon > Close", "Close the sprite")
 
     def _content_solo(self, layout: QVBoxLayout):
+        if self._language == "es":
+            self._section_title(layout, "Que es Solo?")
+            self._line(layout,
+                "Solo te permite ejecutar un personaje animado individual en tu escritorio. "
+                "Se compone de una carpeta con frames PNG que se reproducen en secuencia."
+            )
+
+            self._section_title(layout, "Como agregar un Solo")
+            self._step_list(layout, [
+                "Crea una carpeta dentro del directorio 'sprites/'.",
+                "Coloca tus frames PNG dentro de esa carpeta. "
+                "Nombralos en orden: frame_0001.png, frame_0002.png, etc.",
+                "Haz clic en 'Add Sprite' en Settings, o coloca la carpeta manualmente.",
+                "Selecciona el sprite desde la galeria y configura sus parametros.",
+                "Haz clic en 'Run Solo' para iniciarlo en tu escritorio.",
+            ])
+
+            self._section_title(layout, "Parametros de sprite")
+            self._line(layout, "Frame Size       Ancho y alto en pixeles de la ventana de Solo.")
+            self._line(layout, "Dynamic Mode     Como se mueve Solo en pantalla:")
+            self._line(layout, "Stitched — permanece en una posicion fija.", indent=True)
+            self._line(layout, "Walk — camina de un lado al otro.", indent=True)
+            self._line(layout, "Wandering — rebota libremente por la pantalla.", indent=True)
+            self._line(layout, "Movement Speed   Que tan rapido se mueve Solo (30 / 60 / 120 fps).")
+            self._line(layout, "Delay Mode       Controla la velocidad de animacion:")
+            self._line(layout, "Fixed — retraso constante en milisegundos.", indent=True)
+            self._line(layout, "CPU — el retraso se ajusta automaticamente segun el uso de CPU.", indent=True)
+            self._line(layout, "Presentation — retraso largo por frame, en segundos.", indent=True)
+            return
+            
         self._section_title(layout, "What is Solo?")
         self._line(layout,
             "Solo lets you run a single animated character on your desktop. "
@@ -625,6 +729,33 @@ class HelpWindow:
         self._line(layout, "Presentation — long delay per frame, in seconds.", indent=True)
 
     def _content_reel(self, layout: QVBoxLayout):
+        if self._language == "es":
+            self._section_title(layout, "Que es un Reel?")
+            self._line(layout,
+                "Un Reel es una secuencia de sprites que se reproducen uno despues de otro "
+                "en una sola ventana. Cuando un sprite termina sus ciclos, el siguiente "
+                "toma el control automaticamente."
+            )
+
+            self._section_title(layout, "Como crear un Reel")
+            self._step_list(layout, [
+                "Haz clic en 'Create' dentro de la seccion Reel.",
+                "Ingresa un nombre para el Reel.",
+                "Define la cantidad de ciclos por sprite "
+                "(cuantas veces se repite cada sprite antes de pasar al siguiente).",
+                "Agrega sprites desde la lista disponible y organiza su orden.",
+                "Haz clic en 'Save Reel'.",
+            ])
+
+            self._section_title(layout, "Parametros de Reel")
+            self._line(layout,
+                "Frame Size y Dynamic Mode se comparten para todo el Reel. "
+                "Delay Mode es individual: cada sprite usa su propia configuracion guardada. "
+                "Selecciona un Reel, ajusta los parametros y luego haz clic en 'Run Reel'. "
+                "La configuracion se guarda automaticamente al ejecutar el Reel."
+            )
+            return
+        
         self._section_title(layout, "What is a Reel?")
         self._line(layout,
             "A Reel is a sequence of sprites that play one after another "
@@ -651,6 +782,30 @@ class HelpWindow:
         )
 
     def _content_scenes(self, layout: QVBoxLayout):
+        if self._language == "es":
+            self._section_title(layout, "Que es Scenes?")
+            self._line(layout,
+                "Scenes es un grupo de sprites individuales que se inician juntos "
+                "al mismo tiempo, cada uno en su propia ventana. "
+                "Es util para preparar un escritorio con varios personajes a la vez."
+            )
+
+            self._section_title(layout, "Como crear Scenes")
+            self._step_list(layout, [
+                "Haz clic en 'Create' dentro de la seccion Scenes.",
+                "Ingresa un nombre para Scenes.",
+                "Marca los sprites que quieres incluir.",
+                "Haz clic en 'Save'.",
+                "Selecciona Scenes y haz clic en 'Run Scene' para iniciar todos los sprites.",
+            ])
+
+            self._section_title(layout, "Consejos")
+            self._line(layout,
+                "Cada sprite en Scenes usa su propia configuracion individual. "
+                "Puedes reposicionar cada sprite manualmente arrastrandolo, "
+                "y su posicion se guardara automaticamente."
+            )
+            return
         self._section_title(layout, "What is a Scene?")
         self._line(layout,
             "A scene is a group of individual sprites that launch together "
@@ -675,6 +830,31 @@ class HelpWindow:
         )
 
     def _content_audio(self, layout: QVBoxLayout):
+        if self._language == "es":
+            self._section_title(layout, "Que es Ambient Audio?")
+            self._line(layout,
+                "Ambient Audio te permite reproducir musica de fondo o sonidos "
+                "mientras tus sprites estan ejecutandose en el escritorio."
+            )
+
+            self._section_title(layout, "Como usar Ambient Audio")
+            self._step_list(layout, [
+                "Haz clic en el boton 'Ambient Audio' en Settings.",
+                "Haz clic en 'Upload Audio' para agregar archivos MP3, WAV, OGG, FLAC o AAC.",
+                "Selecciona un archivo de la lista.",
+                "Haz clic en 'Play Loop' para repetirlo indefinidamente, "
+                "o en 'Play List' para reproducir todos los archivos en secuencia.",
+                "Usa el control de volumen para ajustar el nivel.",
+                "Haz clic en el icono de bandeja para minimizar el panel de audio silenciosamente.",
+            ])
+
+            self._section_title(layout, "Consejos")
+            self._line(layout,
+                "El audio continua reproduciendose incluso cuando Settings esta minimizado en la bandeja. "
+                "Usa 'Stop' para silenciarlo en cualquier momento."
+            )
+            return
+            
         self._section_title(layout, "What is Ambient Audio?")
         self._line(layout,
             "Ambient Audio lets you play background music or sounds "
@@ -699,6 +879,29 @@ class HelpWindow:
         )
 
     def _content_create_frame(self, layout: QVBoxLayout):
+        if self._language == "es":
+            self._section_title(layout, "Que es Create Frame?")
+            self._line(layout,
+                "Create Frame extrae frames PNG individuales desde un archivo de video "
+                "o GIF animado, y los guarda como una carpeta de sprite lista para usar."
+            )
+
+            self._section_title(layout, "Como usar Create Frame")
+            self._step_list(layout, [
+                "Haz clic en el boton 'Create Frame' en Settings.",
+                "Define los frames por segundo a extraer: "
+                "0 = todos los frames, o elige 15 / 24 / 30 / 60.",
+                "Haz clic en 'Select Video/GIF' y elige tu archivo.",
+                "Ingresa un nombre de carpeta para los frames de salida.",
+                "Los frames se guardaran dentro de la carpeta 'sprites/', "
+                "listos para usarse como un nuevo sprite.",
+            ])
+
+            self._section_title(layout, "Formatos compatibles")
+            self._line(layout, "Video:  MP4, AVI, MOV, MKV, FLV, WMV, WEBM, MPEG, MPG")
+            self._line(layout, "Imagenes: GIF (animado)")
+            return
+            
         self._section_title(layout, "What is Create Frame?")
         self._line(layout,
             "Create Frame extracts individual PNG frames from a video file or "
@@ -738,7 +941,12 @@ class HelpWindow:
         layout.addWidget(lbl_name)
 
         # Subtitulo
-        lbl_sub = QLabel("Desktop sprite companion for Windows")
+        lbl_sub_text = (
+            "Companero de sprites de escritorio para Windows"
+            if self._language == "es"
+            else "Desktop sprite companion for Windows"
+        )
+        lbl_sub = QLabel(lbl_sub_text)
         lbl_sub.setFont(theme.FONT_SMALL)
         lbl_sub.setStyleSheet(f"""
             color: {theme.TEXT_MUTED};
@@ -778,6 +986,20 @@ class HelpWindow:
         ver_layout.addStretch()
         layout.addWidget(ver_row)
 
+        if self._language == "es":
+            self._section_title(layout, "Gracias por usar Spryta!")
+            self._line(layout,
+                "Esperamos que Spryta aporte un poco de alegria y personalidad a tu escritorio."
+            )
+            self._line(layout, "")
+            self._line(layout,
+                "Si disfrutas usarlo, considera compartirlo con amigos "
+                "o aportar nuevos packs de sprites a la comunidad."
+            )
+            self._line(layout, "")
+            self._line(layout, "Gracias por tu apoyo!")
+            return
+            
         # Mensaje de agradecimiento
         self._section_title(layout, "Thank you for using Spryta!")
         self._line(layout,

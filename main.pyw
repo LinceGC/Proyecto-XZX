@@ -6,6 +6,9 @@ import random
 import ast
 import time
 import json
+import hashlib
+import shutil
+
 try:
     import keyboard
     KEYBOARD_AVAILABLE = True
@@ -46,8 +49,13 @@ os.chdir(get_base_dir())
 _USER_DOCS  = os.path.join(os.path.expanduser("~"), "AppData", "Local", "Spryta")
 DATA_DIR    = os.path.join(_USER_DOCS, "data")
 SPRITES_DIR = os.path.join(_USER_DOCS, "sprites")
+CACHE_DIR   = os.path.join(_USER_DOCS, "cache")
+FRAME_CACHE_DIR = os.path.join(CACHE_DIR, "frames")
+FRAME_CACHE_ALGORITHM_VERSION = "spryta-frame-cache-v1"
+FRAME_CACHE_MAX_BYTES = 512 * 1024 * 1024
 
 os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(FRAME_CACHE_DIR, exist_ok=True)
 
 CONFIG_FILE          = os.path.join(DATA_DIR, "config.ini")
 POSITIONS_FILE       = os.path.join(DATA_DIR, "positions.ini")
@@ -400,12 +408,23 @@ class SpriteApp:
             print(f"Error guardando posicion de playlist: {e}")
     
     def load_frames(self, folder):
-        frames = []
         png_files = self._list_sprite_png_files(folder)
+        if not png_files:
+            return []
+
+        cache_key = self._build_frame_cache_key(folder, png_files)
+        frames = self._load_frames_from_cache(cache_key, len(png_files))
+        if frames:
+            return frames
+
+        frames = []
         for file in png_files:
             frame = self._load_processed_frame(os.path.join(folder, file))
             if frame is not None:
                 frames.append(frame)
+
+        if frames:
+            self._write_frames_cache(cache_key, frames)
         return frames
 
     def _list_sprite_png_files(self, folder):
@@ -431,6 +450,155 @@ class SpriteApp:
                 else:
                     surf.set_at((x, y), self.transparent_color)
         return surf
+
+    def _build_frame_cache_key(self, folder, png_files):
+        """Crea una clave estable que invalida cache por tamano, PNGs o algoritmo."""
+        manifest = {
+            "algorithm": FRAME_CACHE_ALGORITHM_VERSION,
+            "sprite": os.path.basename(os.path.normpath(folder)),
+            "source_folder": os.path.abspath(folder),
+            "frame_width": self.frame_width,
+            "frame_height": self.frame_height,
+            "transparent_color": self.transparent_color,
+            "files": [],
+        }
+
+        for name in png_files:
+            path = os.path.join(folder, name)
+            try:
+                st = os.stat(path)
+                manifest["files"].append({
+                    "name": name,
+                    "size": st.st_size,
+                    "mtime_ns": getattr(
+                        st, "st_mtime_ns", int(st.st_mtime * 1_000_000_000)
+                    ),
+                })
+            except OSError:
+                manifest["files"].append({"name": name, "missing": True})
+
+        raw = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        return hashlib.sha256(raw).hexdigest(), manifest
+
+    def _cache_folder_for_key(self, cache_key):
+        key, _manifest = cache_key
+        return os.path.join(FRAME_CACHE_DIR, key[:2], key)
+
+    def _load_frames_from_cache(self, cache_key, expected_count):
+        cache_folder = self._cache_folder_for_key(cache_key)
+        manifest_path = os.path.join(cache_folder, "manifest.json")
+        try:
+            if not os.path.exists(manifest_path):
+                return []
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+            if (
+                manifest.get("key") != cache_key[0]
+                or manifest.get("frame_count") != expected_count
+            ):
+                raise ValueError("manifest mismatch")
+
+            frames = []
+            for idx in range(expected_count):
+                frame_path = os.path.join(cache_folder, f"frame_{idx:04d}.png")
+                if not os.path.exists(frame_path):
+                    raise FileNotFoundError(frame_path)
+                frames.append(pygame.image.load(frame_path).convert())
+            try:
+                os.utime(cache_folder, None)
+            except OSError:
+                pass
+            return frames
+        except Exception as e:
+            print(f"[FrameCache] Cache invalida, se cargan PNG originales: {e}")
+            try:
+                shutil.rmtree(cache_folder, ignore_errors=True)
+            except Exception:
+                pass
+            return []
+
+    def _write_frames_cache(self, cache_key, frames):
+        cache_folder = self._cache_folder_for_key(cache_key)
+        if os.path.exists(os.path.join(cache_folder, "manifest.json")):
+            return
+
+        tmp_folder = f"{cache_folder}.tmp-{os.getpid()}-{int(time.time() * 1000)}"
+        try:
+            os.makedirs(tmp_folder, exist_ok=True)
+            for idx, frame in enumerate(frames):
+                frame_path = os.path.join(tmp_folder, f"frame_{idx:04d}.png")
+                pygame.image.save(frame, frame_path)
+
+            manifest = dict(cache_key[1])
+            manifest.update({
+                "key": cache_key[0],
+                "frame_count": len(frames),
+                "created_at": time.time(),
+            })
+            manifest_path = os.path.join(tmp_folder, "manifest.json")
+            with open(manifest_path, "w", encoding="utf-8") as f:
+                json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+            os.makedirs(os.path.dirname(cache_folder), exist_ok=True)
+            if not os.path.exists(cache_folder):
+                os.rename(tmp_folder, cache_folder)
+            else:
+                shutil.rmtree(tmp_folder, ignore_errors=True)
+            self._prune_frame_cache()
+        except Exception as e:
+            print(f"[FrameCache] No se pudo escribir cache de frames: {e}")
+            try:
+                shutil.rmtree(tmp_folder, ignore_errors=True)
+            except Exception:
+                pass
+
+    def _prune_frame_cache(self):
+        """Evita cache infinita: elimina sprites borrados y entradas viejas si supera limite."""
+        try:
+            entries = []
+            total_size = 0
+            for root, _dirs, files in os.walk(FRAME_CACHE_DIR):
+                if "manifest.json" not in files:
+                    continue
+                manifest_path = os.path.join(root, "manifest.json")
+                entry_size = 0
+                for name in files:
+                    try:
+                        entry_size += os.path.getsize(os.path.join(root, name))
+                    except OSError:
+                        pass
+
+                remove_entry = False
+                try:
+                    with open(manifest_path, "r", encoding="utf-8") as f:
+                        manifest = json.load(f)
+                    source_folder = manifest.get("source_folder")
+                    if source_folder and not os.path.isdir(source_folder):
+                        remove_entry = True
+                except Exception:
+                    remove_entry = True
+
+                if remove_entry:
+                    shutil.rmtree(root, ignore_errors=True)
+                    continue
+
+                total_size += entry_size
+                try:
+                    last_used = os.path.getmtime(root)
+                except OSError:
+                    last_used = 0
+                entries.append((last_used, root, entry_size))
+
+            if total_size <= FRAME_CACHE_MAX_BYTES:
+                return
+
+            for _last_used, root, entry_size in sorted(entries):
+                shutil.rmtree(root, ignore_errors=True)
+                total_size -= entry_size
+                if total_size <= FRAME_CACHE_MAX_BYTES:
+                    break
+        except Exception as e:
+            print(f"[FrameCache] Limpieza de cache omitida: {e}")
 
     def save_current_position(self):
         """Guarda el punto de origen en positions.ini o reel_positions.ini.

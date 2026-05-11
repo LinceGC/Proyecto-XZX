@@ -40,7 +40,7 @@ from PySide6.QtWidgets import (
 from PIL import Image
 
 from ui import theme
-
+from tools.paths import SPRITES_DIR as USER_SPRITES_DIR
 
 # ============================================================
 # HELPERS INTERNOS: conversion PIL → QPixmap
@@ -723,7 +723,8 @@ class LassoAudioWidget(QWidget):
     """
 
     THUMB_SIZE   = 32    # px de cada miniatura de sprite
-    SPRITES_DIR  = "sprites"
+    # Usar la misma carpeta real que Settings/LassoWindow: AppData\Local\Spryta\sprites.
+    SPRITES_DIR  = USER_SPRITES_DIR
 
     def __init__(self, parent: QWidget, audio_manager,
                  lasso_manager, playlist_name: str,

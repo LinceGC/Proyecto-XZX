@@ -739,6 +739,14 @@ class SettingsApp(QMainWindow):
         self._btn_proc.clicked.connect(self._toggle_process_panel)
         lay.addWidget(self._btn_proc)
 
+        self._btn_clear_cache = QPushButton("Clear Frame Cache")
+        self._btn_clear_cache.setFont(theme.FONT_SMALL)
+        self._btn_clear_cache.setFixedHeight(38)
+        self._btn_clear_cache.setCursor(Qt.CursorShape.PointingHandCursor)
+        theme.set_role(self._btn_clear_cache, "sidebar")
+        self._btn_clear_cache.clicked.connect(self._clear_frame_cache)
+        lay.addWidget(self._btn_clear_cache)
+
         # Empujar controles de sistema hacia abajo
         lay.addStretch()
         lay.addWidget(_hsep())
@@ -2871,7 +2879,7 @@ class SettingsApp(QMainWindow):
     # =========================================================
 
     def _update_tool_active_states(self):
-        """Sincroniza el estado activo de los tres botones de herramientas."""
+        """Sincroniza el estado activo de los botones de herramientas."""
         cf_active   = self.left_panel.is_visible() and self.left_panel.current_tool == "create_frame"
         aa_active   = self.left_panel.is_visible() and self.left_panel.current_tool == "ambient_audio"
         proc_active = self.right_panel.is_visible()
@@ -2899,6 +2907,35 @@ class SettingsApp(QMainWindow):
         else:
             self.right_panel.show(self)
         self._update_tool_active_states()
+
+    def _clear_frame_cache(self):
+        if not ask_yes_no(
+            "Clear Frame Cache",
+            "Delete processed frame cache? Sprites will rebuild it on next launch.",
+            parent=self,
+        ):
+            return
+
+        try:
+            removed_files, removed_bytes = self.frame_extractor.clear_frame_cache()
+            show_info(
+                "Frame Cache Cleared",
+                (
+                    f"Removed {removed_files} cached files "
+                    f"({self._format_bytes(removed_bytes)})."
+                ),
+                parent=self,
+            )
+        except Exception as e:
+            show_error("Frame Cache", f"Could not clear frame cache:\n{e}", parent=self)
+
+    def _format_bytes(self, value: int) -> str:
+        size = float(value or 0)
+        for unit in ("B", "KB", "MB", "GB"):
+            if size < 1024 or unit == "GB":
+                return f"{size:.1f} {unit}" if unit != "B" else f"{int(size)} {unit}"
+            size /= 1024
+        return f"{size:.1f} GB"
 
     def _on_left_panel_closed(self):
         self._update_tool_active_states()

@@ -23,16 +23,15 @@ AppSupportURL={#AppURL}
 AppUpdatesURL={#AppURL}
 
 ; IMPORTANTE:
-; Spryta escribe archivos de estado en /data y sprites_running.txt.
-; Para evitar errores de permisos en Program Files, se instala por usuario.
-DefaultDirName={autopf}\{#AppName}
+; La aplicacion se instala en el perfil del usuario, no en Program Files.
+; Los datos modificables viven en {localappdata}\Spryta para evitar UAC/admin.
+DefaultDirName={localappdata}\Programs\{#AppName}
 DefaultGroupName={#AppName}
 DisableDirPage=no
 DisableProgramGroupPage=yes
 
-; Instalacion por usuario (sin UAC admin)
-PrivilegesRequired=admin
-PrivilegesRequiredOverridesAllowed=commandline
+; Instalacion por usuario (sin UAC admin). No requiere elevacion.
+PrivilegesRequired=lowest
 
 OutputDir=installer_output
 OutputBaseFilename=Spryta_Setup_v{#AppVersion}
@@ -45,9 +44,9 @@ LZMAUseSeparateProcess=yes
 MinVersion=10.0
 WizardStyle=modern
 
-; Si se desea reemplazar archivos en una actualizacion
+; Cierra procesos del usuario actual durante actualizaciones/desinstalaciones; no requiere admin.
 CloseApplications=yes
-CloseApplicationsFilter={#AppExeName},{#StartupExeName}
+CloseApplicationsFilter={#AppExeName},main.exe,{#StartupExeName}
 RestartApplications=no
 
 [Languages]
@@ -66,9 +65,10 @@ Source: "{#BuildDir}\Spryta_internal\*"; DestDir: "{app}\Spryta_internal"; Flags
 Source: "{#BuildDir}\_internal\*";      DestDir: "{app}\_internal";      Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 Source: "{#BuildDir}\main_runtime\*";   DestDir: "{app}\main_runtime";   Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#BuildDir}\startup_runtime\*"; DestDir: "{app}\startup_runtime"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Copiar contenido por defecto de Audio/Sprites al perfil del usuario
-Source: "{#BuildDir}\Audio\*";   DestDir: "{localappdata}\Spryta\Audio";   Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
-Source: "{#BuildDir}\sprites\*"; DestDir: "{localappdata}\Spryta\sprites"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
+; Copiar contenido por defecto de Audio/Sprites al perfil del usuario.
+; No se elimina al desinstalar para preservar datos del usuario.
+Source: "{#BuildDir}\Audio\*";   DestDir: "{localappdata}\Spryta\Audio";   Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist uninsneveruninstall
+Source: "{#BuildDir}\sprites\*"; DestDir: "{localappdata}\Spryta\sprites"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist uninsneveruninstall
 [Dirs]
 ; Crear la carpeta de datos del usuario durante la instalacion.
 ; {localappdata} = C:\Users\USUARIO\AppData\Local\
@@ -90,8 +90,9 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 Filename: "{app}\{#AppExeName}"; Description: "Launch {#AppName}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
-; Intentar cerrar procesos de Spryta antes de desinstalar
-Filename: "{cmd}"; Parameters: "/C taskkill /F /IM {#AppExeName} /IM main.exe /IM ""Spryta Sprite.exe"""; Flags: runhidden
+; Intentar cerrar procesos del usuario actual antes de desinstalar.
+; taskkill no requiere admin para procesos propios; si no hay procesos, no falla la desinstalacion.
+Filename: "{cmd}"; Parameters: "/C taskkill /F /IM {#AppExeName} /IM main.exe /IM {#StartupExeName} /IM ""Spryta Sprite.exe"" >nul 2>nul || exit /B 0"; Flags: runhidden
 
 [Code]
 procedure CurStepChanged(CurStep: TSetupStep);

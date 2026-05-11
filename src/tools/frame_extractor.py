@@ -3,17 +3,37 @@
 Modulo de extraccion de frames de video/GIF
 """
 import os
-import cv2
-from PIL import Image
+import shutil
 
 class FrameExtractor:
     """Extractor de frames de videos y GIFs"""
     
     def __init__(self):
-        self.sprites_dir = os.path.join(
-            os.path.expanduser("~"), "AppData", "Local", "Spryta", "sprites"
+        self.user_dir = os.path.join(
+            os.path.expanduser("~"), "AppData", "Local", "Spryta"
         )
+        self.sprites_dir = os.path.join(self.user_dir, "sprites")
+        self.frame_cache_dir = os.path.join(self.user_dir, "cache", "frames")
         os.makedirs(self.sprites_dir, exist_ok=True)
+        os.makedirs(self.frame_cache_dir, exist_ok=True)
+
+    def clear_frame_cache(self):
+        """Elimina la cache de frames procesados y devuelve (archivos, bytes)."""
+        removed_files = 0
+        removed_bytes = 0
+
+        if os.path.isdir(self.frame_cache_dir):
+            for root, _dirs, files in os.walk(self.frame_cache_dir):
+                for name in files:
+                    removed_files += 1
+                    try:
+                        removed_bytes += os.path.getsize(os.path.join(root, name))
+                    except OSError:
+                        pass
+            shutil.rmtree(self.frame_cache_dir, ignore_errors=True)
+
+        os.makedirs(self.frame_cache_dir, exist_ok=True)
+        return removed_files, removed_bytes
     
     def extract_from_video(self, video_path, output_folder, target_fps=0):
         """
@@ -27,6 +47,8 @@ class FrameExtractor:
         Returns:
             int: Numero de frames extraidos
         """
+        import cv2
+        
         cap = cv2.VideoCapture(video_path)
         
         if not cap.isOpened():
@@ -71,6 +93,8 @@ class FrameExtractor:
         Returns:
             int: Numero de frames extraidos
         """
+        from PIL import Image
+        
         os.makedirs(output_folder, exist_ok=True)
         
         with Image.open(gif_path) as gif:

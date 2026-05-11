@@ -66,7 +66,8 @@ DATA_DIR       = os.path.join(_USER_DOCS, "data")
 SPRITES_DIR    = os.path.join(_USER_DOCS, "sprites")
 LASSOS_FILE    = os.path.join(DATA_DIR, "lassos.json")
 LASSO_POS_FILE = os.path.join(DATA_DIR, "lasso_positions.ini")
-
+# Debe coincidir con REGISTRY_FILE en main.pyw: ahi se registran sprites listos.
+REGISTRY_FILE  = os.path.join(DATA_DIR, "sprites_running.txt")
 
 # ================================================================
 # Constantes publicas
@@ -860,9 +861,10 @@ class LassoManager:
     ) -> None:
         """
         Bloquea brevemente hasta que los sprites de la cancion aparezcan
-        en sprites_running.txt (registro escrito por main.pyw al terminar carga).
+        en REGISTRY_FILE (registro escrito por main.pyw al terminar carga).
         """
-        registry_path = "sprites_running.txt"
+        # Esta ruta debe coincidir con main.pyw para no depender del cwd.
+        registry_path = REGISTRY_FILE
         expected = set(sprites or [])
         if not expected:
             return

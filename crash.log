@@ -1,0 +1,48 @@
+=== main entry point ===
+argv: ['C:\\Frame\\Spryta\\main.pyw', 'Dulce']
+Traceback (most recent call last):
+  File "C:\Frame\Spryta\main.pyw", line 1165, in <module>
+    app = SpriteApp(
+          ^^^^^^^^^^
+  File "C:\Frame\Spryta\main.pyw", line 230, in __init__
+    self.frames = self.load_frames(sprite_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Frame\Spryta\main.pyw", line 413, in load_frames
+    cache_key = self._build_frame_cache_key(folder, png_files)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Frame\Spryta\main.pyw", line 478, in _build_frame_cache_key
+    raw = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
+          ^^^^
+NameError: name 'json' is not defined
+=== main entry point ===
+argv: ['C:\\Frame\\Spryta\\main.pyw', 'Kana Arima Sugar']
+Traceback (most recent call last):
+  File "C:\Frame\Spryta\main.pyw", line 1165, in <module>
+    app = SpriteApp(
+          ^^^^^^^^^^
+  File "C:\Frame\Spryta\main.pyw", line 230, in __init__
+    self.frames = self.load_frames(sprite_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Frame\Spryta\main.pyw", line 413, in load_frames
+    cache_key = self._build_frame_cache_key(folder, png_files)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Frame\Spryta\main.pyw", line 478, in _build_frame_cache_key
+    raw = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
+          ^^^^
+NameError: name 'json' is not defined
+=== main entry point ===
+argv: ['C:\\Frame\\Spryta\\main.pyw', 'Dulce']
+Traceback (most recent call last):
+  File "C:\Frame\Spryta\main.pyw", line 1165, in <module>
+    app = SpriteApp(
+          ^^^^^^^^^^
+  File "C:\Frame\Spryta\main.pyw", line 230, in __init__
+    self.frames = self.load_frames(sprite_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Frame\Spryta\main.pyw", line 413, in load_frames
+    cache_key = self._build_frame_cache_key(folder, png_files)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Frame\Spryta\main.pyw", line 478, in _build_frame_cache_key
+    raw = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
+          ^^^^
+NameError: name 'json' is not defined
