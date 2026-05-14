@@ -464,7 +464,7 @@ class SettingsApp(QMainWindow):
 
         # ── Estado general ────────────────────────────────────
         self.solo_gallery   = None
-        self.help_window  = HelpWindow(self)
+        self.help_window  = HelpWindow(self, on_clear_frame_cache=self._clear_frame_cache)
 
         # ── Archivos de configuracion ─────────────────────────
         self.config                    = configparser.ConfigParser()
@@ -739,14 +739,6 @@ class SettingsApp(QMainWindow):
         self._btn_proc.clicked.connect(self._toggle_process_panel)
         lay.addWidget(self._btn_proc)
 
-        self._btn_clear_cache = QPushButton("Clear Frame Cache")
-        self._btn_clear_cache.setFont(theme.FONT_SMALL)
-        self._btn_clear_cache.setFixedHeight(38)
-        self._btn_clear_cache.setCursor(Qt.CursorShape.PointingHandCursor)
-        theme.set_role(self._btn_clear_cache, "sidebar")
-        self._btn_clear_cache.clicked.connect(self._clear_frame_cache)
-        lay.addWidget(self._btn_clear_cache)
-
         # Empujar controles de sistema hacia abajo
         lay.addStretch()
         lay.addWidget(_hsep())
@@ -757,7 +749,8 @@ class SettingsApp(QMainWindow):
         lbl_support.setFont(theme.FONT_TINY)
         lbl_support.setStyleSheet(f"color: {theme.TEXT_MUTED}; padding-left: 8px; background: transparent;")
         lay.addWidget(lbl_support)
-
+        lay.addSpacing(4)
+        
         btn_help = QPushButton("Help")
         btn_help.setFont(theme.FONT_SMALL)
         btn_help.setFixedHeight(38)
@@ -2466,7 +2459,7 @@ class SettingsApp(QMainWindow):
         """
 
         # ── Available Sprites — grid de miniaturas ───────────
-        lbl_avail = QLabel("Available Sprite:  (doble clic para agregar)")
+        lbl_avail = QLabel("Available Sprite:  (Double-click to add)")
         lbl_avail.setFont(theme.FONT_SMALL)
         lbl_avail.setStyleSheet(f"color:{theme.TEXT_NORMAL};")
         lay.addWidget(lbl_avail)
@@ -2560,7 +2553,7 @@ class SettingsApp(QMainWindow):
 
         # ── Label fuera y entre los dos campos ───────────────
         lay.addSpacing(4)
-        lbl_sel = QLabel("Reel Order:  (doble clic para quitar  |  arrastrar para reordenar)")
+        lbl_sel = QLabel("Reel Order:  (Double-click to remove | Drag to reorder)")
         lbl_sel.setFont(theme.FONT_SMALL)
         lbl_sel.setStyleSheet(f"color:{theme.TEXT_NORMAL};")
         lay.addWidget(lbl_sel)
@@ -2848,8 +2841,8 @@ class SettingsApp(QMainWindow):
             )
             _show_launch_toast(
                 self,
-                "Spryta ejecutándose...",
-                f"Reel '{reel_name}' iniciado"
+                "Spryta running...",
+                f"Reel '{reel_name}' started"
             )
             self._start_process_watcher(prev)
         except Exception as e:
@@ -2879,7 +2872,7 @@ class SettingsApp(QMainWindow):
     # =========================================================
 
     def _update_tool_active_states(self):
-        """Sincroniza el estado activo de los botones de herramientas."""
+        """Sincroniza el estado activo de los tres botones de herramientas."""
         cf_active   = self.left_panel.is_visible() and self.left_panel.current_tool == "create_frame"
         aa_active   = self.left_panel.is_visible() and self.left_panel.current_tool == "ambient_audio"
         proc_active = self.right_panel.is_visible()
@@ -2907,7 +2900,7 @@ class SettingsApp(QMainWindow):
         else:
             self.right_panel.show(self)
         self._update_tool_active_states()
-
+        
     def _clear_frame_cache(self):
         if not ask_yes_no(
             "Clear Frame Cache",
@@ -2928,6 +2921,14 @@ class SettingsApp(QMainWindow):
             )
         except Exception as e:
             show_error("Frame Cache", f"Could not clear frame cache:\n{e}", parent=self)
+
+    def _format_bytes(self, value: int) -> str:
+        size = float(value or 0)
+        for unit in ("B", "KB", "MB", "GB"):
+            if size < 1024 or unit == "GB":
+                return f"{size:.1f} {unit}" if unit != "B" else f"{int(size)} {unit}"
+            size /= 1024
+        return f"{size:.1f} GB"
 
     def _format_bytes(self, value: int) -> str:
         size = float(value or 0)
@@ -2964,13 +2965,13 @@ class SettingsApp(QMainWindow):
 
         prev = len(self.process_manager.get_running_sprites())
         self._start_process_watcher(prev, expected_count)
-        title = "Spryta ejecutándose..."
+        title = "Spryta running..."
         if song:
             subtitle = f"Lasso · {song}"
         elif playlist_name:
             subtitle = f"Lasso · Playlist '{playlist_name}'"
         else:
-            subtitle = f"Lasso · Cargando {expected_count} sprite(s)"
+            subtitle = f"Lasso · Loading {expected_count} sprite(s)"
         _show_launch_toast(self, title, subtitle)
     
     def _refresh_right_panel(self, force_open: bool = False):
@@ -3071,13 +3072,13 @@ class SettingsApp(QMainWindow):
             return
 
         self._status_bar.showMessage(
-            f"Ejecutando '{sprite}'... la ventana aparecerá cuando termine de cargar.",
+            "Running '{sprite}'... the window will appear when it finishes loading.",
             5000
         )
         _show_launch_toast(
             self,
-            "Spryta ejecutándose...",
-            f"Cargando '{sprite}'..."
+            "Spryta running...",
+            f"Loading '{sprite}'..."
         )
         
         self._start_process_watcher(prev)
@@ -3205,7 +3206,7 @@ class SettingsApp(QMainWindow):
                 app_path = self._get_app_path()
                 if not app_path:
                     raise FileNotFoundError(
-                        "No se encontró spryta_startup.exe ni spryta_startup.pyw."
+                        "Spryta_startup.exe and spryta_startup.pyw were not found."
                     )
                 winreg.SetValueEx(key, "Spryta", 0, winreg.REG_SZ, app_path)
                 self.save_session()
@@ -3363,7 +3364,7 @@ class SettingsApp(QMainWindow):
             with open(session_path, "w", encoding="utf-8") as f:
                 session.write(f)
         except Exception as e:
-            print(f"Error guardando sesion: {e}")
+            print(f"Error saving session: {e}")
     
     def _clear_session(self):
         """Limpia session.ini cuando el usuario desactiva Start with Windows."""
@@ -3374,7 +3375,7 @@ class SettingsApp(QMainWindow):
             with open(session_path, "w", encoding="utf-8") as f:
                 session.write(f)
         except Exception as e:
-            print(f"Error limpiando sesion: {e}")
+            print(f"Error clearing session: {e}")
             
     def restore_session(self, delay_seconds: int = 8):
         # Guardia: si ya hay sprites corriendo (startup los lanzo), no duplicar
@@ -3403,8 +3404,8 @@ class SettingsApp(QMainWindow):
                     0,
                     lambda: _show_launch_toast(
                         self,
-                        "Spryta ejecutándose...",
-                        "Restaurando sesión"
+                        "Spryta running...",
+                        "Restoring session"
                     )
                 )
                 time.sleep(2.0)
@@ -3428,7 +3429,7 @@ class SettingsApp(QMainWindow):
                             subprocess.Popen([executable] + args)
                         time.sleep(0.3)
                     except Exception as e:
-                        print(f"Error lanzando: {e}")
+                        print(f"Error launching: {e}")
 
                 if session.has_section("Sprites"):
                     for sp in [
@@ -3466,7 +3467,7 @@ class SettingsApp(QMainWindow):
 
             threading.Thread(target=launch_after_delay, daemon=True).start()
         except Exception as e:
-            print(f"Error restaurando sesion: {e}")
+            print(f"Error restoring session: {e}")
 
     def _finalize_and_exit(self):
         """Guarda sesion, detiene audio y cierra la aplicacion."""

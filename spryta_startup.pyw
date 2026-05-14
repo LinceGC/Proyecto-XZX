@@ -159,7 +159,7 @@ def restore_session():
                 subprocess.Popen([executable] + args, cwd=BASE_DIR)
             time.sleep(DELAY_S)
         except Exception as e:
-            print(f"Error lanzando: {e}")
+            print(f"Error launching: {e}")
 
     # Sprites individuales
     if session.has_section("Sprites"):
@@ -273,7 +273,7 @@ class _StartupMainWindow(QWidget):
                     cwd=BASE_DIR
                 )
         except Exception as e:
-            print(f"[StartupMainWindow] Error abriendo Settings: {e}")
+            print(f"[StartupMainWindow] Error opening Settings: {e}")
 
         # Ocultar el tray del startup: Settings creara el suyo propio.
         if self._tray is not None:
@@ -312,7 +312,7 @@ class _StartupMainWindow(QWidget):
                 session.write(f)
 
         except Exception as e:
-            print(f"[StartupMainWindow] Error guardando sesion: {e}")
+            print(f"[StartupMainWindow] Error saving session: {e}")
 
     def _finalize_and_exit(self):
         """
@@ -325,7 +325,7 @@ class _StartupMainWindow(QWidget):
         try:
             self._process_manager.close_all_sprites()
         except Exception as e:
-            print(f"[StartupMainWindow] Error cerrando sprites: {e}")
+            print(f"[StartupMainWindow] Error closing sprites: {e}")
 
         if self._tray is not None:
             self._tray.hide()
@@ -418,13 +418,13 @@ class StartupNotification(QWidget):
         text_col.setContentsMargins(0, 0, 0, 0)
         text_col.setSpacing(4)
 
-        lbl_title = QLabel("Spryta iniciando...")
+        lbl_title = QLabel("Spryta starting...")
         lbl_title.setStyleSheet(
             f"color: {TEXT_BRIGHT}; font-family: 'Segoe UI'; "
             f"font-size: 10pt; font-weight: bold; background: transparent; border: none;"
         )
 
-        lbl_sub = QLabel("Restaurando sesion anterior")
+        lbl_sub = QLabel("Restoring previous session")
         lbl_sub.setStyleSheet(
             f"color: {TEXT_NORMAL}; font-family: 'Segoe UI'; "
             f"font-size: 8pt; background: transparent; border: none;"

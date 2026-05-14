@@ -214,17 +214,17 @@ class SpriteApp:
                 # Usar el primer sprite disponible
                 self.sprite_name = available_sprites[0]
                 sprite_path = os.path.join(SPRITES_DIR, self.sprite_name)
-                print(f"Sprite '{self.sprite_name}' no encontrado. Usando '{available_sprites[0]}' como fallback.")
+                print(f"Sprite '{self.sprite_name}' not found. Using '{available_sprites[0]}' as fallback.")
             else:
                 # No hay sprites en absoluto â†’ error amigable
                 pygame.quit()
                 messagebox.showerror(
                     "Error: No sprites found",
-                    "No se encontraron sprites en la carpeta 'sprites/'.\n\n"
-                    "Por favor ejecuta primero 'setting.pyw' para:\n"
-                    "1. Crear una carpeta de sprites\n"
-                    "2. Configurar los parametros\n"
-                    "3. Guardar la configuracion"
+                    "No sprites were found in the folder 'sprites/'.\n\n"
+                    "Please run first 'setting.pyw' para:\n"
+                    "1. Create a sprites folder\n"
+                    "2. Configure the parameters\n"
+                    "3. Save the settings"
                 )
                 os._exit(1)
 
@@ -234,8 +234,8 @@ class SpriteApp:
             pygame.quit()
             messagebox.showerror(
                 "Error: Empty sprite",
-                f"No se encontraron archivos PNG en '{sprite_path}'.\n\n"
-                "El sprite debe contener al menos un archivo .png"
+                f"No PNG files were found in '{sprite_path}'.\n\n"
+                "The sprite must contain at least one file .png"
             )
             os._exit(1)
         
@@ -318,7 +318,7 @@ class SpriteApp:
             self.y = 100
             self.banner_y = self.y
         except Exception as e:
-            print(f"Error cargando posicion: {e}")
+            print(f"Error loading position: {e}")
             self.x = 100
             self.y = 100
             self.banner_y = self.y
@@ -360,7 +360,7 @@ class SpriteApp:
             self.y = 100
             self.banner_y = self.y
         except Exception as e:
-            print(f"Error cargando posicion de playlist: {e}")
+            print(f"Error loading playlist position: {e}")
             self.x = 100
             self.y = 100
             self.banner_y = self.y
@@ -381,7 +381,7 @@ class SpriteApp:
             self.y = 100
             self.banner_y = self.y
         except Exception as e:
-            print(f"Error cargando posicion vinculada: {e}")
+            print(f"Error loading linked position: {e}")
             self.x = 100
             self.y = 100
             self.banner_y = self.y
@@ -405,7 +405,7 @@ class SpriteApp:
             with open(REEL_POSITIONS_FILE, "w", encoding='utf-8') as f:
                 pos_config.write(f)
         except Exception as e:
-            print(f"Error guardando posicion de playlist: {e}")
+            print(f"Error saving playlist position: {e}")
     
     def load_frames(self, folder):
         png_files = self._list_sprite_png_files(folder)
@@ -510,7 +510,7 @@ class SpriteApp:
                 pass
             return frames
         except Exception as e:
-            print(f"[FrameCache] Cache invalida, se cargan PNG originales: {e}")
+            print(f"[FrameCache] Invalid cache, original PNGs are loaded: {e}")
             try:
                 shutil.rmtree(cache_folder, ignore_errors=True)
             except Exception:
@@ -546,7 +546,7 @@ class SpriteApp:
                 shutil.rmtree(tmp_folder, ignore_errors=True)
             self._prune_frame_cache()
         except Exception as e:
-            print(f"[FrameCache] No se pudo escribir cache de frames: {e}")
+            print(f"[FrameCache] Invalid cache, original PNGs are loaded: {e}")
             try:
                 shutil.rmtree(tmp_folder, ignore_errors=True)
             except Exception:
@@ -598,7 +598,7 @@ class SpriteApp:
                 if total_size <= FRAME_CACHE_MAX_BYTES:
                     break
         except Exception as e:
-            print(f"[FrameCache] Limpieza de cache omitida: {e}")
+            print(f"[FrameCache] Cache cleaning skipped: {e}")
 
     def save_current_position(self):
         """Guarda el punto de origen en positions.ini o reel_positions.ini.
@@ -646,7 +646,7 @@ class SpriteApp:
             self._last_saved_x = current_x
             self._last_saved_y = current_y
         except Exception as e:
-            print(f"Error guardando posicion: {e}")
+            print(f"Error saving position: {e}")
            
     def preload_next_sprite(self):
         """Pre-carga los frames del siguiente sprite en un hilo separado"""
@@ -1047,7 +1047,7 @@ class SpriteApp:
                 json.dump(registry, f, indent=2)
                 
         except Exception as e:
-            print(f"Error registrando sprite: {e}")
+            print(f"Error registering sprite: {e}")
     
     def unregister_sprite(self):
         """Desregistra este sprite al cerrar"""
@@ -1069,7 +1069,7 @@ class SpriteApp:
                 json.dump(registry, f, indent=2)
                 
         except Exception as e:
-            print(f"Error desregistrando sprite: {e}")
+            print(f"Error unregistering sprite: {e}")
 
     def _wait_for_sync_group_ready(self, timeout_s: float = 10.0):
         if not self.sync_group or self.sync_expected <= 1:

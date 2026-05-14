@@ -127,7 +127,7 @@ class LassoManager:
             self._playlists      = data.get("playlists", {})
             self._pause_behavior = data.get("pause_behavior", PAUSE_HIDE)
         except Exception as e:
-            print(f"[LassoManager] Error cargando lassos.json: {e}")
+            print(f"[LassoManager] Error loading lassos.json: {e}")
 
     def save(self) -> None:
         """
@@ -143,7 +143,7 @@ class LassoManager:
             with open(LASSOS_FILE, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            print(f"[LassoManager] Error guardando lassos.json: {e}")
+            print(f"[LassoManager] Error saving lassos.json: {e}")
 
     # ----------------------------------------------------------
     # SECCION 2 — Gestion de playlists
@@ -559,17 +559,17 @@ class LassoManager:
         # Verificar que la carpeta del sprite existe en disco
         sprite_path = os.path.join(SPRITES_DIR, sprite_name)
         if not os.path.exists(sprite_path):
-            print(f"[LassoManager] Sprite no encontrado en disco: {sprite_name}")
+            print(f"[LassoManager] Sprite not found on disk: {sprite_name}")
             return
 
         # Si ya hay una instancia vinculada de este sprite corriendo, no duplicar
         if self.is_sprite_running(sprite_name):
-            print(f"[LassoManager] Sprite '{sprite_name}' ya esta corriendo vinculado")
+            print(f"[LassoManager] Sprite '{sprite_name}' is already running linked")
             return
 
         executable, use_pythonw = self._get_executable()
         if executable is None:
-            print(f"[LassoManager] ERROR: No se encontro ejecutable. cwd={os.getcwd()}")
+            print(f"[LassoManager] ERROR: Executable not found. cwd={os.getcwd()}")
             return
 
         # Escribir posicion en lasso_positions.ini ANTES de lanzar
@@ -586,10 +586,10 @@ class LassoManager:
         try:
             if use_pythonw:
                 pythonw = self._get_pythonw()
-                print(f"[LassoManager] Lanzando: {pythonw} {executable} {args}")
+                print(f"[LassoManager] Launching: {pythonw} {executable} {args}")
                 proc = subprocess.Popen([pythonw, executable] + args)
             else:
-                print(f"[LassoManager] Lanzando: {executable} {args}")
+                print(f"[LassoManager] Launching: {executable} {args}")
                 proc = subprocess.Popen([executable] + args)
 
             self._lasso_pids[sprite_name] = proc.pid
@@ -598,7 +598,7 @@ class LassoManager:
             # una posicion mas reciente en lasso_positions.ini que en lassos.json
             self.sync_position_from_sprite(playlist_name, sprite_name)
         except Exception as e:
-            print(f"[LassoManager] ERROR lanzando '{sprite_name}': {e}")
+            print(f"[LassoManager] ERROR launching '{sprite_name}': {e}")
 
     def _stop_all_lasso_sprites(self) -> None:
         """Termina todos los procesos de sprites vinculados activos."""
@@ -701,7 +701,7 @@ class LassoManager:
             with open(flag_path, "w", encoding="utf-8") as f:
                 f.write(f"{command}:{time.time()}")
         except Exception as e:
-            print(f"[LassoManager] Error escribiendo comando '{command}' para PID {pid}: {e}")
+            print(f"[LassoManager] Error writing command '{command}' for PID {pid}: {e}")
 
     def _write_lasso_position(self, playlist_name: str,
                               sprite_name: str,
@@ -736,7 +736,7 @@ class LassoManager:
             with open(LASSO_POS_FILE, "w", encoding="utf-8") as f:
                 pos_cfg.write(f)
         except Exception as e:
-            print(f"[LassoManager] Error escribiendo posicion vinculada: {e}")
+            print(f"[LassoManager] Error writing linked position: {e}")
 
     # ----------------------------------------------------------
     # SECCION 10 — Sincronizacion de posiciones desde main.pyw
@@ -771,7 +771,7 @@ class LassoManager:
             if x != current_x or y != current_y:
                 self.set_sprite_position(playlist_name, sprite_name, x, y)
         except Exception as e:
-            print(f"[LassoManager] Error sincronizando posicion de '{sprite_name}': {e}")
+            print(f"[LassoManager] Error synchronizing position of '{sprite_name}': {e}")
 
     # ----------------------------------------------------------
     # SECCION 11 — Utilidades publicas

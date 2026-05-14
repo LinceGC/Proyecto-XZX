@@ -220,7 +220,7 @@ def _clear_session() -> None:
         with open(SESSION_FILE, "w", encoding="utf-8") as f:
             session.write(f)
     except Exception as e:
-        print(f"[session] Error limpiando sesion: {e}")
+        print(f"[session] Error clearing session: {e}")
 
 
 # ============================================================
@@ -280,7 +280,7 @@ def _launch_items(data: _SessionData) -> None:
                 subprocess.Popen([exe] + args, cwd=BASE_DIR)
             time.sleep(0.3)
         except Exception as e:
-            print(f"[session] Error lanzando {args}: {e}")
+            print(f"[session] Error launching {args}: {e}")
 
     def _do():
         for sp in data.available_sprites:
@@ -901,4 +901,4 @@ def offer_restore_session(parent, process_manager) -> None:
         prev = len(process_manager.get_running_sprites())
         parent._start_process_watcher(prev, expected_count=expected)
     except Exception as e:
-        print(f"[session] Error iniciando watcher: {e}")
+        print(f"[session] Error starting watcher: {e}")

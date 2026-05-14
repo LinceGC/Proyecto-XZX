@@ -323,14 +323,14 @@ class SpriteGalleryWidget(QWidget):
 
         try:
             if not os.path.isdir(sprite_path):
-                raise FileNotFoundError(f"No existe: {sprite_path}")
+                raise FileNotFoundError(f"It doesn't exist: {sprite_path}")
 
             png_files = sorted(
                 f for f in os.listdir(sprite_path)
                 if f.lower().endswith(".png")
             )
             if not png_files:
-                raise FileNotFoundError("No hay PNG en la carpeta")
+                raise FileNotFoundError("It doesn't exist")
 
             img_path = os.path.join(sprite_path, png_files[0])
             img      = Image.open(img_path).convert("RGBA")
@@ -351,7 +351,7 @@ class SpriteGalleryWidget(QWidget):
             return _pil_to_qpixmap(background)
 
         except Exception as e:
-            print(f"[SpriteGalleryWidget] Error generando miniatura: {e}")
+            print(f"[SpriteGalleryWidget] Error thumbnail: {e}")
             return _make_placeholder_pixmap(THUMB_SIZE)
 
 

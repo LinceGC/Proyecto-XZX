@@ -38,7 +38,7 @@ class AmbientAudioManager:
                 pygame.mixer.init()
                 pygame.mixer.music.set_volume(0.8)
             except Exception as e:
-                print(f"Error inicializando pygame: {e}")
+                print(f"Error initializing pygame: {e}")
     
     def get_audio_files(self):
         """Obtiene lista de archivos de audio disponibles"""

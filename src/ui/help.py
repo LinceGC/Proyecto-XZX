@@ -18,7 +18,7 @@ Uso (sin cambiar nada en setting.pyw):
 import os
 
 from PySide6.QtCore    import Qt, QPropertyAnimation, QEasingCurve, QSize
-from PySide6.QtGui     import QFont, QIcon, QColor
+from PySide6.QtGui     import QFont, QIcon, QColor, QPixmap, QPainter, QPen
 from PySide6.QtWidgets import (
     QDialog, QWidget, QFrame,
     QVBoxLayout, QHBoxLayout,
@@ -39,7 +39,43 @@ _WIN_H    = 680   # alto
 _SIDEBAR  = 160   # ancho del sidebar de navegacion
 _CONTENT  = _WIN_W - _SIDEBAR - 1   # ancho del area de contenido
 
+def _make_flag_icon(language: str) -> QIcon:
+    """Crea una bandera pequena por codigo, sin assets externos."""
+    pixmap = QPixmap(28, 20)
+    pixmap.fill(Qt.GlobalColor.transparent)
 
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+
+    if language == "es":
+        painter.fillRect(0, 0, 28, 5, QColor("#AA151B"))
+        painter.fillRect(0, 5, 28, 10, QColor("#F1BF00"))
+        painter.fillRect(0, 15, 28, 5, QColor("#AA151B"))
+        painter.fillRect(7, 8, 3, 5, QColor("#C60B1E"))
+    else:
+        painter.fillRect(0, 0, 28, 20, QColor("#012169"))
+
+        white_pen = QPen(QColor("#FFFFFF"), 5)
+        painter.setPen(white_pen)
+        painter.drawLine(0, 0, 28, 20)
+        painter.drawLine(28, 0, 0, 20)
+
+        red_pen = QPen(QColor("#C8102E"), 2)
+        painter.setPen(red_pen)
+        painter.drawLine(0, 0, 28, 20)
+        painter.drawLine(28, 0, 0, 20)
+
+        painter.fillRect(11, 0, 6, 20, QColor("#FFFFFF"))
+        painter.fillRect(0, 7, 28, 6, QColor("#FFFFFF"))
+        painter.fillRect(13, 0, 2, 20, QColor("#C8102E"))
+        painter.fillRect(0, 9, 28, 2, QColor("#C8102E"))
+
+    painter.setPen(QPen(QColor("#000000"), 1))
+    painter.drawRect(0, 0, 27, 19)
+    painter.end()
+    return QIcon(pixmap)
+    
+    
 # ============================================================
 # SECCION 2: CLASE PRINCIPAL
 # ============================================================
@@ -69,7 +105,7 @@ class HelpWindow:
         hw.show()
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, on_clear_frame_cache=None):
         """
         Parametros:
             parent -- QWidget padre (la ventana principal de settings).
@@ -81,6 +117,7 @@ class HelpWindow:
         self._language     = "en"   # idioma por defecto del contenido explicativo
         self._current_section = None
         self._lang_btns    = {}
+        self._on_clear_frame_cache = on_clear_frame_cache
         
     # =========================================================
     # API PUBLICA
@@ -242,6 +279,7 @@ class HelpWindow:
             "Scenes"      : self._content_scenes,
             "Ambient Audio": self._content_audio,
             "Create Frame": self._content_create_frame,
+            "Cache"       : self._content_cache,
             "About"       : self._content_about,
         }
 
@@ -350,12 +388,14 @@ class HelpWindow:
         layout.setSpacing(theme.SP1)
 
         # Selector de idioma: queda anclado en la esquina inferior izquierda.
-        # No usa imagenes externas para mantener compatibilidad con PyInstaller.
+        # Las banderas se dibujan por codigo para mantener compatibilidad con PyInstaller.
         self._lang_btns = {}
-        for lang, label in (("es", "🇪🇸 ES"), ("en", "🇬🇧 EN")):
+        for lang, label in (("es", "ES"), ("en", "EN")):
             btn_lang = QPushButton(label)
             btn_lang.setFont(theme.FONT_SMALL)
-            btn_lang.setFixedSize(70, 34)
+            btn_lang.setIcon(_make_flag_icon(lang))
+            btn_lang.setIconSize(QSize(28, 20))
+            btn_lang.setFixedSize(100, 34)
             btn_lang.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_lang.clicked.connect(lambda checked=False, code=lang: self._set_language(code))
             layout.addWidget(btn_lang)
@@ -651,9 +691,8 @@ class HelpWindow:
             )
 
             self._section_title(layout, "Controles del mouse para sprites")
-            self._shortcut_row(layout, "Left click",        "Pausar / reanudar el movimiento")
-            self._shortcut_row(layout, "Left click + drag", "Mover el sprite libremente")
-            self._shortcut_row(layout, "Tray icon > Close", "Cerrar el sprite")
+            self._shortcut_row(layout, "Clic izquierdo + arrastrar", "Mover el sprite libremente")
+            self._shortcut_row(layout, "Icono de la bandeja > Close", "Cerrar el sprite")
             return
 
         self._section_title(layout, "Global Keyboard Shortcuts")
@@ -665,7 +704,6 @@ class HelpWindow:
         )
 
         self._section_title(layout, "Sprite Mouse Controls")
-        self._shortcut_row(layout, "Left click",        "Pause / Resume movement")
         self._shortcut_row(layout, "Left click + drag", "Move the sprite freely")
         self._shortcut_row(layout, "Tray icon > Close", "Close the sprite")
 
@@ -688,16 +726,16 @@ class HelpWindow:
             ])
 
             self._section_title(layout, "Parametros de sprite")
-            self._line(layout, "Frame Size       Ancho y alto en pixeles de la ventana de Solo.")
-            self._line(layout, "Dynamic Mode     Como se mueve Solo en pantalla:")
-            self._line(layout, "Stitched — permanece en una posicion fija.", indent=True)
-            self._line(layout, "Walk — camina de un lado al otro.", indent=True)
-            self._line(layout, "Wandering — rebota libremente por la pantalla.", indent=True)
-            self._line(layout, "Movement Speed   Que tan rapido se mueve Solo (30 / 60 / 120 fps).")
-            self._line(layout, "Delay Mode       Controla la velocidad de animacion:")
-            self._line(layout, "Fixed — retraso constante en milisegundos.", indent=True)
-            self._line(layout, "CPU — el retraso se ajusta automaticamente segun el uso de CPU.", indent=True)
-            self._line(layout, "Presentation — retraso largo por frame, en segundos.", indent=True)
+            self._line(layout, "Frame Size: Ancho y alto en pixeles de la ventana de Solo.")
+            self._line(layout, "Dynamic Mod: Como se mueve Solo en pantalla:")
+            self._line(layout, "Stitched: permanece en una posicion fija.", indent=True)
+            self._line(layout, "Walk: camina de un lado al otro.", indent=True)
+            self._line(layout, "Wandering: rebota libremente por la pantalla.", indent=True)
+            self._line(layout, "Movement Speed: Que tan rapido se mueve Solo (30 / 60 / 120 fps).")
+            self._line(layout, "Delay Mode: Controla la velocidad de animacion:")
+            self._line(layout, "Fixed: retraso constante en milisegundos.", indent=True)
+            self._line(layout, "CPU: el retraso se ajusta automaticamente segun el uso de CPU.", indent=True)
+            self._line(layout, "Presentation: retraso largo por frame, en segundos.", indent=True)
             return
             
         self._section_title(layout, "What is Solo?")
@@ -717,16 +755,16 @@ class HelpWindow:
         ])
 
         self._section_title(layout, "Sprite Parameters")
-        self._line(layout, "Frame Size       Width and height in pixels of the solo window.")
-        self._line(layout, "Dynamic Mode     How the solo moves on screen:")
-        self._line(layout, "Stitched — stays in a fixed position.", indent=True)
-        self._line(layout, "Walk — walks from one side to the other.", indent=True)
-        self._line(layout, "Wandering — bounces freely around the screen.", indent=True)
-        self._line(layout, "Movement Speed   How fast the solo moves (30 / 60 / 120 fps).")
-        self._line(layout, "Delay Mode       Controls animation speed:")
-        self._line(layout, "Fixed — constant delay in milliseconds.", indent=True)
-        self._line(layout, "CPU — delay adjusts automatically based on CPU usage.", indent=True)
-        self._line(layout, "Presentation — long delay per frame, in seconds.", indent=True)
+        self._line(layout, "Frame Size: Width and height in pixels of the solo window.")
+        self._line(layout, "Dynamic Mode: How the solo moves on screen:")
+        self._line(layout, "Stitched: stays in a fixed position.", indent=True)
+        self._line(layout, "Walk: walks from one side to the other.", indent=True)
+        self._line(layout, "Wandering: bounces freely around the screen.", indent=True)
+        self._line(layout, "Movement Speed: How fast the solo moves (30 / 60 / 120 fps).")
+        self._line(layout, "Delay Mode: Controls animation speed:")
+        self._line(layout, "Fixed: constant delay in milliseconds.", indent=True)
+        self._line(layout, "CPU: delay adjusts automatically based on CPU usage.", indent=True)
+        self._line(layout, "Presentation: long delay per frame, in seconds.", indent=True)
 
     def _content_reel(self, layout: QVBoxLayout):
         if self._language == "es":
@@ -900,6 +938,13 @@ class HelpWindow:
             self._section_title(layout, "Formatos compatibles")
             self._line(layout, "Video:  MP4, AVI, MOV, MKV, FLV, WMV, WEBM, MPEG, MPG")
             self._line(layout, "Imagenes: GIF (animado)")
+            
+            self._section_title(layout, "Consejos")
+            self._line(layout, 
+                "Utilizar un editor de imagen para eliminar los fondos "
+                "manualmente o una herramienta de IA"
+            )
+           
             return
             
         self._section_title(layout, "What is Create Frame?")
@@ -922,6 +967,76 @@ class HelpWindow:
         self._section_title(layout, "Supported formats")
         self._line(layout, "Video:  MP4, AVI, MOV, MKV, FLV, WMV, WEBM, MPEG, MPG")
         self._line(layout, "Images: GIF (animated)")
+        
+        self._section_title(layout, "Tips")
+        self._line(layout, 
+            "Use an image editor to remove backgrounds "
+            "manually or an AI tool"
+        )
+
+    def _content_cache(self, layout: QVBoxLayout):
+        """Contenido de ayuda para mantenimiento de cache."""
+        if self._language == "es":
+            self._section_title(layout, "Cache")
+            self._line(layout,
+                "Spryta guarda frames procesados en una cache local para que los sprites "
+                "carguen mas rapido despues de crearlos o convertirlos."
+            )
+            self._line(layout,
+                "Usa Clear Frame Cache si notas frames antiguos, archivos temporales "
+                "acumulados o quieres forzar que Spryta reconstruya esos datos en el "
+                "proximo inicio."
+            )
+            self._line(layout,
+                "Esto no elimina tus sprites originales. Solo borra frames procesados "
+                "que Spryta puede volver a generar."
+            )
+        else:
+            self._section_title(layout, "Cache")
+            self._line(layout,
+                "Spryta stores processed frames in a local cache so sprites load faster "
+                "after they are created or converted."
+            )
+            self._line(layout,
+                "Use Clear Frame Cache if you notice stale frames, accumulated temporary "
+                "files, or want Spryta to rebuild those generated files on the next launch."
+            )
+            self._line(layout,
+                "This does not delete your original sprites. It only removes processed "
+                "frames that Spryta can generate again."
+            )
+
+        self._line(layout, "")
+
+        row = QWidget()
+        row.setStyleSheet("background: transparent;")
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(theme.SP2, theme.SP2, theme.SP2, theme.SP2)
+        row_layout.setSpacing(theme.SP1)
+
+        btn_clear = QPushButton("Clear Frame Cache")
+        btn_clear.setFont(theme.FONT_SMALL)
+        btn_clear.setFixedHeight(34)
+        btn_clear.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_clear.setEnabled(callable(self._on_clear_frame_cache))
+        theme.set_role(btn_clear, "primary")
+        btn_clear.clicked.connect(self._clear_frame_cache_from_help)
+
+        row_layout.addWidget(btn_clear)
+        row_layout.addStretch()
+        layout.addWidget(row)
+
+    def _clear_frame_cache_from_help(self):
+        """Ejecuta la accion de limpieza configurada por la ventana principal."""
+        if not callable(self._on_clear_frame_cache):
+            return
+        try:
+            self._on_clear_frame_cache()
+        except Exception as exc:
+            # El callback principal ya maneja los errores esperados. Este guard evita
+            # que un fallo inesperado cierre la ayuda o deje el boton sin respuesta.
+            from ui.dialog import show_error
+            show_error("Frame Cache", f"Could not open frame cache action:\n{exc}", parent=self._window)
 
     def _content_about(self, layout: QVBoxLayout):
         # Espacio superior
@@ -942,9 +1057,9 @@ class HelpWindow:
 
         # Subtitulo
         lbl_sub_text = (
-            "Companero de sprites de escritorio para Windows"
+            "Complemento de sprites de escritorio para Windows"
             if self._language == "es"
-            else "Desktop sprite companion for Windows"
+            else "Desktop sprite plugin for Windows"
         )
         lbl_sub = QLabel(lbl_sub_text)
         lbl_sub.setFont(theme.FONT_SMALL)
@@ -992,11 +1107,6 @@ class HelpWindow:
                 "Esperamos que Spryta aporte un poco de alegria y personalidad a tu escritorio."
             )
             self._line(layout, "")
-            self._line(layout,
-                "Si disfrutas usarlo, considera compartirlo con amigos "
-                "o aportar nuevos packs de sprites a la comunidad."
-            )
-            self._line(layout, "")
             self._line(layout, "Gracias por tu apoyo!")
             return
             
@@ -1004,11 +1114,6 @@ class HelpWindow:
         self._section_title(layout, "Thank you for using Spryta!")
         self._line(layout,
             "We hope Spryta brings a little joy and personality to your desktop."
-        )
-        self._line(layout, "")
-        self._line(layout,
-            "If you enjoy using it, consider sharing it with friends "
-            "or contributing new sprite packs to the community."
         )
         self._line(layout, "")
         self._line(layout, "Thank you for your support!")

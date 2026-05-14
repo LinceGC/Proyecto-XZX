@@ -71,7 +71,7 @@ class ProcessManager:
             
             return True
         except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-            print(f"Error cerrando proceso {pid}: {e}")
+            print(f"Error closing process {pid}: {e}")
             return False
     
     def close_all_sprites(self):
@@ -120,7 +120,7 @@ class ProcessManager:
             with open(self.registry_file, 'w', encoding='utf-8') as f:
                 json.dump(registry_data, f, indent=2)
         except Exception as e:
-            print(f"Error guardando registro: {e}")
+            print(f"Error saving record: {e}")
     
     def get_running_sprites_for_display(self):
         """

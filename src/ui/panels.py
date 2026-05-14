@@ -341,14 +341,14 @@ class LeftToolPanel:
         self._fps_entry.setFont(theme.FONT_MONO)
         self._fps_entry.setFixedSize(64, 32)
         self._fps_entry.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._fps_entry.setToolTip("Valor personalizado (0 = todos los frames)")
+        self._fps_entry.setToolTip("Custom value (0 = all frames)")
         row_top.addWidget(self._fps_entry)
 
         fps_lay.addLayout(row_top)
 
         # Botones de seleccion rapida — ancho completo, una fila
         _FPS_OPTIONS = [
-            (0,  "All",  "Todos los frames"),
+            (0,  "All",  "All frames"),
             (15, "15",   "15 fps"),
             (24, "24",   "24 fps"),
             (30, "30",   "30 fps"),
@@ -402,7 +402,7 @@ class LeftToolPanel:
 
         fps_lay.addLayout(fps_grid)
 
-        lbl_hint = QLabel("0 = extraer todos los frames del video")
+        lbl_hint = QLabel("0 = extract all frames from the video")
         lbl_hint.setFont(theme.FONT_TINY)
         lbl_hint.setStyleSheet(f"color: {theme.TEXT_MUTED};")
         fps_lay.addWidget(lbl_hint)
@@ -630,7 +630,7 @@ class LeftToolPanel:
         _BTN_H = 40
 
         # ── Fila 0: boton Reproducir / Pausar (oculto hasta activar playlist) ──
-        self._btn_play_pause = QPushButton("▶  Reproducir")
+        self._btn_play_pause = QPushButton("▶  Reproduce")
         self._btn_play_pause.setFont(theme.FONT_SMALL)
         self._btn_play_pause.setFixedHeight(_BTN_H)
         self._btn_play_pause.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -643,7 +643,7 @@ class LeftToolPanel:
         self._btn_play_pause.setGraphicsEffect(self._eff_play_pause)
 
         # ── Fila 1: botones de navegacion de playlist (ocultos) ──
-        self._btn_anterior = QPushButton("Anterior")
+        self._btn_anterior = QPushButton("before")
         self._btn_anterior.setFont(theme.FONT_SMALL)
         self._btn_anterior.setFixedHeight(_BTN_H)
         self._btn_anterior.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -656,7 +656,7 @@ class LeftToolPanel:
         self._eff_anterior.setOpacity(0.0)
         self._btn_anterior.setGraphicsEffect(self._eff_anterior)
 
-        self._btn_siguiente = QPushButton("Siguiente")
+        self._btn_siguiente = QPushButton("next")
         self._btn_siguiente.setFont(theme.FONT_SMALL)
         self._btn_siguiente.setFixedHeight(_BTN_H)
         self._btn_siguiente.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -1017,9 +1017,9 @@ class LeftToolPanel:
         if self._btn_play_pause:
             is_paused = getattr(self.audio_manager, 'is_paused', False)
             if self.audio_manager.is_playing and not is_paused:
-                self._btn_play_pause.setText("⏸  Pausar")
+                self._btn_play_pause.setText("⏸  Pause")
             else:
-                self._btn_play_pause.setText("▶  Reproducir")
+                self._btn_play_pause.setText("▶  Reproduce")
         
         # ── Boton Play Loop / Stop Loop ───────────────────────
         if self.audio_manager.is_playing and not self.audio_manager.is_playlist_mode:
@@ -1435,12 +1435,12 @@ class RightProcessPanel:
             try:
                 self.audio_manager.stop()
             except Exception as e:
-                print(f"[RightProcessPanel] Error deteniendo audio: {e}")
+                print(f"[RightProcessPanel] Error stopping audio: {e}")
         if self.lasso_manager:
             try:
                 self.lasso_manager.on_song_stop()
             except Exception as e:
-                print(f"[RightProcessPanel] Error notificando lasso_manager: {e}")
+                print(f"[RightProcessPanel] Error notifying lasso_manager: {e}")
     
     def _on_window_close(self, event):
         """Intercepta el boton X de la ventana."""

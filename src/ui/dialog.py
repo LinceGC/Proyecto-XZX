@@ -383,7 +383,7 @@ class _AskStringDialog(_SprytaDialog):
         # Insertamos la entrada antes de la fila de botones (ultimo elemento)
         self._entry = QLineEdit(initial)
         self._entry.setFont(theme.FONT_NORMAL)
-        self._entry.setPlaceholderText("Escribe aqui...")
+        self._entry.setPlaceholderText("Write here...")
         self._entry.setFixedHeight(36)
         self._entry.returnPressed.connect(self._on_ok)
 

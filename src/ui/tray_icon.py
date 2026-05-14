@@ -219,7 +219,7 @@ class _SpriteRow(QWidget):
         btn = QPushButton("✕")
         btn.setFixedSize(20, 20)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn.setToolTip("Cerrar sprite")
+        btn.setToolTip("Close sprite")
         btn.setStyleSheet(f"""
             QPushButton {{
                 background: transparent;
@@ -363,11 +363,11 @@ class TrayMenu(QWidget):
         lay.setContentsMargins(0, 4, 0, 4)
         lay.setSpacing(0)
 
-        self._btn_settings = _MenuButton("Mostrar Settings", "⚙")
+        self._btn_settings = _MenuButton("Show Settings", "⚙")
         self._btn_settings.clicked.connect(self._toggle_settings)
         lay.addWidget(self._btn_settings)
 
-        self._btn_sprites = _MenuButton("Ocultar Sprites", "👁")
+        self._btn_sprites = _MenuButton("Hide Sprites", "👁")
         self._btn_sprites.clicked.connect(self._toggle_sprites)
         lay.addWidget(self._btn_sprites)
 
@@ -385,7 +385,7 @@ class TrayMenu(QWidget):
         hdr.setStyleSheet("background: transparent;")
         hdr_lay = QHBoxLayout(hdr)
         hdr_lay.setContentsMargins(16, 0, 16, 6)
-        hdr_lay.addWidget(_SectionLabel("Sprites activos"))
+        hdr_lay.addWidget(_SectionLabel("Active sprites"))
         hdr_lay.addStretch()
         lay.addWidget(hdr)
 
@@ -453,7 +453,7 @@ class TrayMenu(QWidget):
         lay.addWidget(_SectionLabel("Ambient Audio"))
 
         # Nombre de la pista activa
-        self._lbl_track = QLabel("Sin audio")
+        self._lbl_track = QLabel("No audio")
         self._lbl_track.setStyleSheet(
             f"color: {C_TEXT_MUTED}; font-family: '{FONT}';"
             f"font-size: 11px; background: transparent; border: none;"
@@ -470,10 +470,10 @@ class TrayMenu(QWidget):
         self._btn_play = _CtrlButton("▶")
         self._btn_next = _CtrlButton("⏭")
 
-        self._btn_prev.setToolTip("Anterior (solo en Reel)")
-        self._btn_stop.setToolTip("Detener")
-        self._btn_play.setToolTip("Reproducir / Pausar")
-        self._btn_next.setToolTip("Siguiente (solo en Reel)")
+        self._btn_prev.setToolTip("Before (Reel only)")
+        self._btn_stop.setToolTip("Stop")
+        self._btn_play.setToolTip("Play / Pause")
+        self._btn_next.setToolTip("Next (Reel only)")
 
         self._btn_prev.clicked.connect(self._audio_prev)
         self._btn_stop.clicked.connect(self._audio_stop)
@@ -545,7 +545,7 @@ class TrayMenu(QWidget):
         w_lay = QVBoxLayout(wrapper)
         w_lay.setContentsMargins(0, 4, 0, 4)
         w_lay.setSpacing(0)
-        btn = _MenuButton("Salir de Spryta", "⏻", danger=True)
+        btn = _MenuButton("Exit Spryta", "⏻", danger=True)
         btn.clicked.connect(self._exit_app)
         w_lay.addWidget(btn)
         parent_layout.addWidget(wrapper)
@@ -594,7 +594,7 @@ class TrayMenu(QWidget):
             and not self.main_window.isMinimized()
         )
         self._btn_settings.setText(
-            "⚙   Ocultar Settings" if visible else "⚙   Mostrar Settings"
+            "⚙   Hide Settings" if visible else "⚙   Show Settings"
         )
     
     def _refresh_sprites_visible_state(self):
@@ -607,7 +607,7 @@ class TrayMenu(QWidget):
             except Exception:
                 pass
         self._btn_sprites.setText(
-            "👁   Ocultar Sprites" if self._sprites_visible else "👁   Mostrar Sprites"
+            "👁   Hide Sprites" if self._sprites_visible else "👁   Show Sprites"
         )
     
     def _refresh_sprites(self):
@@ -627,7 +627,7 @@ class TrayMenu(QWidget):
                     self._sprites_body.count() - 1, row
                 )
         else:
-            lbl = QLabel("Sin sprites activos")
+            lbl = QLabel("No active sprites")
             lbl.setStyleSheet(
                 f"color: {C_TEXT_MUTED}; font-family: '{FONT}';"
                 f"font-size: 11px; background: transparent; border: none;"
@@ -647,7 +647,7 @@ class TrayMenu(QWidget):
                 f"font-size: 11px; background: transparent; border: none;"
             )
         else:
-            self._lbl_track.setText("Sin audio")
+            self._lbl_track.setText("No audio")
             self._lbl_track.setStyleSheet(
                 f"color: {C_TEXT_MUTED}; font-family: '{FONT}';"
                 f"font-size: 11px; background: transparent; border: none;"
@@ -697,12 +697,12 @@ class TrayMenu(QWidget):
                 f.write(f"{command}:{ts}")
             self._sprites_visible = not self._sprites_visible
             self._btn_sprites.setText(
-                "👁   Mostrar Sprites"
+                "👁   Show Sprites"
                 if not self._sprites_visible
-                else "👁   Ocultar Sprites"
+                else "👁   Hide Sprites"
             )
         except Exception as e:
-            print(f"[TrayMenu] Error escribiendo toggle flag: {e}")
+            print(f"[TrayMenu] Error writing toggle flag: {e}")
 
     def _on_close_sprite(self, pid):
         """Cierra un sprite y refresca la lista tras un breve retraso."""
@@ -719,12 +719,12 @@ class TrayMenu(QWidget):
                 try:
                     self.audio_manager.stop()
                 except Exception as e:
-                    print(f"[TrayMenu] Error deteniendo audio: {e}")
+                    print(f"[TrayMenu] Error stopping audio: {e}")
             if self.lasso_manager:
                 try:
                     self.lasso_manager.on_song_stop()
                 except Exception as e:
-                    print(f"[TrayMenu] Error notificando lasso_manager: {e}")
+                    print(f"[TrayMenu] Error reporting lasso manager: {e}")
         QTimer.singleShot(700, self._refresh_sprites)
 
     def _audio_play_pause(self):
@@ -766,7 +766,7 @@ class TrayMenu(QWidget):
                     if files:
                         am.play_playlist(0)
                 except Exception as e:
-                    print(f"[TrayMenu] Error iniciando audio: {e}")
+                    print(f"[TrayMenu] Error starting audio: {e}")
 
         self._refresh_audio()
 
